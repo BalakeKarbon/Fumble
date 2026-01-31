@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import ProfileCard from "./components/ProfileCard";
-import PromptCard from "./components/PromptCard";
-import VitalsCard from "./components/VitalsCard";
-import PhotoCard from "./components/PhotoCard";
-import SwipeableCard from "./components/SwipeableCard";
 import LoginView from "./components/LoginView";
+import SwipingView from "./components/SwipingView";
+import ChatView from "./components/ChatView";
+import SelfProfileView from "./components/SelfProfileView";
+import { Heart, MessageCircle, User } from "lucide-react";
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState("swiping");
 
   if (!isAuthenticated) {
     return <LoginView onLoginSuccess={() => setIsAuthenticated(true)} />;
@@ -17,80 +17,41 @@ export default function Home() {
 
   return (
     <main className="min-h-screen w-full bg-[#f4f4f5] flex justify-center">
-      <div className="w-full max-w-md bg-[#f4f4f5] min-h-screen flex flex-col gap-3 p-3 pb-10 overflow-x-hidden">
+      <div className="w-full max-w-md bg-[#f4f4f5] min-h-screen flex flex-col relative shadow-2xl">
 
-        {/* 1. Hero Profile Card */}
-        <SwipeableCard onLike={() => console.log("Liked Profile Photo")}>
-          <ProfileCard
-            name="Rylee Johnston"
-            imageSrc="/profile-main.png"
-            tags={["Looksmaxing", "Trapezing", "Donating to Charity"]}
-          />
-        </SwipeableCard>
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto w-full">
+          {activeTab === "swiping" && <SwipingView />}
+          {activeTab === "chat" && <ChatView />}
+          {activeTab === "profile" && <SelfProfileView />}
+        </div>
 
-        {/* 2. Prompt */}
-        <SwipeableCard onLike={() => console.log("Liked Prompt 1")}>
-          <PromptCard
-            question="A fun fact about me"
-            answer="I once ate a whole pizza in one sitting and didn't regret it."
-          />
-        </SwipeableCard>
+        {/* Bottom Tab Bar */}
+        <div className="fixed bottom-0 w-full max-w-md bg-white border-t border-zinc-200 h-20 flex justify-around items-center z-50 left-1/2 -translate-x-1/2 pb-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          {/* Swiping Tab */}
+          <button
+            onClick={() => setActiveTab("swiping")}
+            className={`p-4 transition-colors ${activeTab === "swiping" ? "text-rose-500" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            <Heart size={32} strokeWidth={activeTab === "swiping" ? 3 : 2} fill={activeTab === "swiping" ? "currentColor" : "none"} />
+          </button>
 
-        {/* 3. Vitals */}
-        <SwipeableCard onLike={() => console.log("Liked Vitals")}>
-          <VitalsCard
-            age={24}
-            height="5'7&quot;"
-            stereotype="Gamer"
-            profession="Product Designer"
-            location="Brooklyn, NY"
-            relationshipType="Monogamy"
-          />
-        </SwipeableCard>
+          {/* Chat Tab */}
+          <button
+            onClick={() => setActiveTab("chat")}
+            className={`p-4 transition-colors ${activeTab === "chat" ? "text-rose-500" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            <MessageCircle size={32} strokeWidth={activeTab === "chat" ? 3 : 2} />
+          </button>
 
-        {/* 4. Photo */}
-        <SwipeableCard onLike={() => console.log("Liked Photo 1")}>
-          <PhotoCard />
-        </SwipeableCard>
-
-        {/* 5. Photo */}
-        <SwipeableCard onLike={() => console.log("Liked Photo 2")}>
-          <PhotoCard />
-        </SwipeableCard>
-
-        {/* 6. Prompt */}
-        <SwipeableCard onLike={() => console.log("Liked Prompt 2")}>
-          <PromptCard
-            question="Dating me is like"
-            answer="Finding a needle in a haystack, but the needle is made of chocolate."
-          />
-        </SwipeableCard>
-
-        {/* 7. Photo */}
-        <SwipeableCard onLike={() => console.log("Liked Photo 3")}>
-          <PhotoCard />
-        </SwipeableCard>
-
-        {/* 8. Prompt */}
-        <SwipeableCard onLike={() => console.log("Liked Prompt 3")}>
-          <PromptCard
-            question="My simple pleasures"
-            answer="Morning coffee, sunset walks, and the smell of old books."
-          />
-        </SwipeableCard>
-
-        {/* 9. Photo */}
-        <SwipeableCard onLike={() => console.log("Liked Photo 4")}>
-          <PhotoCard />
-        </SwipeableCard>
-
-        {/* 10. Photo */}
-        <SwipeableCard onLike={() => console.log("Liked Photo 5")}>
-          <PhotoCard />
-        </SwipeableCard>
-
-        {/* Bottom padding/space */}
-        <div className="h-10" />
+          {/* Profile Tab */}
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`p-4 transition-colors ${activeTab === "profile" ? "text-rose-500" : "text-zinc-400 hover:text-zinc-600"}`}
+          >
+            <User size={32} strokeWidth={activeTab === "profile" ? 3 : 2} />
+          </button>
+        </div>
       </div>
     </main>
   );
