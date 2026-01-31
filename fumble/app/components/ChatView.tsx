@@ -2,7 +2,11 @@
 
 import { MessageCircle } from "lucide-react";
 
-export default function ChatView() {
+interface ChatViewProps {
+  onSelectChat?: (chat: { id: number; name: string }) => void;
+}
+
+export default function ChatView({ onSelectChat }: ChatViewProps) {
   const chats = [
     { id: 1, name: "Sarah", message: "Hey! How's your weekend going?", time: "2m" },
     { id: 2, name: "Mike", message: "That hike looks amazing!", time: "1h" },
@@ -20,7 +24,11 @@ export default function ChatView() {
       {/* Chat List */}
       <div className="flex flex-col">
         {chats.map((chat) => (
-          <div key={chat.id} className="p-4 bg-white border-b border-zinc-100 flex items-center gap-4 hover:bg-zinc-50 active:bg-zinc-100 transition-colors cursor-pointer">
+          <div
+            key={chat.id}
+            onClick={() => onSelectChat && onSelectChat(chat)}
+            className="p-4 bg-white border-b border-zinc-100 flex items-center gap-4 hover:bg-zinc-50 active:bg-zinc-100 transition-colors cursor-pointer"
+          >
             {/* Avatar Placeholder */}
             <div className="w-12 h-12 bg-zinc-200 rounded-full flex items-center justify-center shrink-0">
               <span className="font-bold text-zinc-400">{chat.name[0]}</span>
