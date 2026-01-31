@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
@@ -30,7 +31,16 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
     <div className="flex min-h-screen flex-col items-center justify-center bg-white text-black p-6 font-sans">
       <div className="flex flex-col items-center gap-8 w-full max-w-sm">
         {/* Top Logo Area */}
-        <div className="text-xl font-bold tracking-widest">FUMBLE</div>
+        <div className="mb-4">
+          <Image
+            src="/img/fumble_logo.jpg"
+            alt="Fumble"
+            width={200}  // adjust width to fit your design
+            height={80}  // adjust height to match aspect ratio
+            priority
+          />
+        </div>
+
 
         {/* Bumble Style Text - Black & White adaptation */}
         <div className="relative mb-8">
