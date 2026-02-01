@@ -87,7 +87,8 @@ export default function ChatDetailView({ chat, onBack, currentUserId, socket }: 
 
     socket.emit("send_message", {
       to: chat.id.toString(),
-      message: inputText
+      message: inputText,
+      tempId: newMessage.id
     });
 
     // Update last message time for this chat

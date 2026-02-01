@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "socket.io";
@@ -5,6 +6,7 @@ import { networkInterfaces } from "node:os";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { GoogleGenAI } from "@google/genai";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0"; // Bind to all network interfaces
@@ -15,10 +17,29 @@ const handler = app.getRequestHandler();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MESSAGES_FILE = join(__dirname, "app/data/messages.json");
+const USERS_FILE = join(__dirname, "app/data/users.json");
+
+// Initialize Gemini API (optional - only if API key is provided)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 // Save messages to JSON file
 function saveMessages(messages) {
   writeFileSync(MESSAGES_FILE, JSON.stringify(messages, null, 2), "utf-8");
+}
+
+// Load users data
+let users = [];
+try {
+  const usersData = readFileSync(USERS_FILE, "utf-8");
+  users = JSON.parse(usersData);
+} catch (error) {
+  console.error("Error loading users data:", error);
+}
+
+// Get user by ID
+function getUserById(userId) {
+  return users.find(u => u.id === parseInt(userId));
 }
 
 // Get conversation ID from two user IDs
@@ -26,6 +47,39 @@ function getConversationId(user1, user2) {
   const id1 = parseInt(user1);
   const id2 = parseInt(user2);
   return `${Math.min(id1, id2)}_${Math.max(id1, id2)}`;
+}
+
+// Rewrite message using Gemini based on user stereotype
+async function rewriteMessageWithGemini(originalMessage, stereotype) {
+  // If Gemini is not configured, return original message
+  if (!genAI) {
+    console.log("Gemini API not configured, using original message");
+    return originalMessage;
+  }
+
+  try {
+    const prompt = `You are helping a user in a dating app. The user has the stereotype: "${stereotype}".
+
+Rewrite the following message to better fit their stereotype while keeping the core meaning and intent. Make it sound more authentic to their personality type. Keep it natural and conversational - don't make it overly formal or artificial.
+
+Original message: "${originalMessage}"
+
+Rewritten message:`;
+
+    const response = await genAI.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+
+    const rewrittenMessage = response.text.trim();
+
+    console.log(`Original: "${originalMessage}" -> Rewritten: "${rewrittenMessage}"`);
+    return rewrittenMessage;
+  } catch (error) {
+    console.error("Error rewriting message with Gemini:", error);
+    // Return original message if Gemini fails
+    return originalMessage;
+  }
 }
 
 // Start with empty messages (cleared on each server restart)
@@ -61,8 +115,19 @@ app.prepare().then(() => {
       console.log(`User ${userId} joined with socket ${socket.id}`);
     });
 
-    socket.on("send_message", ({ to, message }) => {
+    socket.on("send_message", async ({ to, message, tempId }) => {
       console.log(`Message from ${socket.userId} to ${to}:`, message);
+
+      // Get sender's user data
+      const sender = getUserById(socket.userId);
+      let finalMessage = message;
+
+      // Rewrite message using Gemini if user has a stereotype
+      if (sender && sender.stereotype) {
+        finalMessage = await rewriteMessageWithGemini(message, sender.stereotype);
+      } else {
+        console.log(`User ${socket.userId} has no stereotype, sending original message`);
+      }
 
       const timestamp = Date.now();
       const messageId = timestamp;
@@ -77,7 +142,7 @@ app.prepare().then(() => {
         id: messageId,
         from: socket.userId,
         to: to,
-        text: message,
+        text: finalMessage,
         timestamp: timestamp
       };
 
@@ -89,7 +154,7 @@ app.prepare().then(() => {
       if (recipientSocketId) {
         io.to(recipientSocketId).emit("receive_message", {
           from: socket.userId,
-          message,
+          message: finalMessage,
           timestamp: timestamp,
           id: messageId
         });
@@ -98,6 +163,7 @@ app.prepare().then(() => {
       // Confirm to sender
       socket.emit("message_sent", {
         id: messageId,
+        tempId: tempId,
         timestamp: timestamp
       });
     });
