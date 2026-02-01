@@ -67,7 +67,6 @@ export default function SwipingView({ currentUser }: SwipingViewProps) {
           stereotype={displayUser.stereotype}
           profession={displayUser.profession}
           location={displayUser.location}
-          relationshipType={displayUser.relationshipType}
         />
       </SwipeableCard>
 

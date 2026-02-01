@@ -39,7 +39,6 @@ export default function SelfProfileView({ currentUser }: SelfProfileViewProps) {
         stereotype={currentUser.stereotype}
         profession={currentUser.profession}
         location={currentUser.location}
-        relationshipType={currentUser.relationshipType}
       />
 
       {/* 4-8. Photos */}
