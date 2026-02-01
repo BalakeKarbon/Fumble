@@ -2,14 +2,14 @@
   {
     "id": 1,
     "accessCode": "A7K2",
-    "name": "User 1",
+    "name": "Ronald Jangam",
     "mainPhoto": "/users/1/main.jpg",
-    "tags": ["Interest 1", "Interest 2", "Interest 3"],
+    "tags": ["Travel", "Photography", "Languages"],
     "age": 25,
     "height": "5'8\"",
     "stereotype": "Type",
     "profession": "Profession",
-    "location": "City, State",
+    "location": "Everywhere",
     "photos": ["/users/1/photo1.jpg", "/users/1/photo2.jpg", "/users/1/photo3.jpg", "/users/1/photo4.jpg", "/users/1/photo5.jpg"],
     "prompts": [
       { "question": "A fun fact about me", "answer": "Placeholder answer" },
@@ -290,7 +290,7 @@
   {
     "id": 17,
     "accessCode": "S6C1",
-    "name": "User 17",
+    "name": "Michael",
     "mainPhoto": "/users/17/main.jpg",
     "tags": ["Interest 1", "Interest 2", "Interest 3"],
     "age": 35,
@@ -308,7 +308,7 @@
   {
     "id": 18,
     "accessCode": "T4D5",
-    "name": "User 18",
+    "name": "Sopy Thann",
     "mainPhoto": "/users/18/main.jpg",
     "tags": ["Interest 1", "Interest 2", "Interest 3"],
     "age": 18,
@@ -326,7 +326,7 @@
   {
     "id": 19,
     "accessCode": "U8E2",
-    "name": "User 19",
+    "name": "Nora Su",
     "mainPhoto": "/users/19/main.jpg",
     "tags": ["Interest 1", "Interest 2", "Interest 3"],
     "age": 36,
