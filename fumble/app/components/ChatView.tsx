@@ -4,23 +4,52 @@ import { MessageCircle } from "lucide-react";
 import { UserProfile } from "../types/user";
 import { getAllUsersExcept } from "../lib/users";
 import { getChatLastMessageTime } from "../lib/chatStorage";
+import { useEffect, useState } from "react";
+import { Socket } from "socket.io-client";
 
 interface ChatViewProps {
   onSelectChat?: (chat: { id: number; name: string }) => void;
   currentUser: UserProfile;
+  socket: Socket;
 }
 
-export default function ChatView({ onSelectChat, currentUser }: ChatViewProps) {
+export default function ChatView({ onSelectChat, currentUser, socket }: ChatViewProps) {
+  const [lastMessages, setLastMessages] = useState<Record<string, { text: string; timestamp: number }>>({});
+
   // Get all users except the current user for testing
   const allOtherUsers = getAllUsersExcept(currentUser.id);
 
+  // Load last messages on mount
+  useEffect(() => {
+    socket.emit("get_all_last_messages");
+
+    const handleAllLastMessages = (messages: Record<string, { text: string; timestamp: number }>) => {
+      setLastMessages(messages);
+    };
+
+    socket.on("all_last_messages", handleAllLastMessages);
+
+    return () => {
+      socket.off("all_last_messages", handleAllLastMessages);
+    };
+  }, [socket]);
+
+  // Helper to get conversation ID
+  function getConversationId(userId1: number, userId2: number): string {
+    return `${Math.min(userId1, userId2)}_${Math.max(userId1, userId2)}`;
+  }
+
   // Map users to chats with last message time
   const chatsWithTime = allOtherUsers.map(user => {
-    const lastMessageTime = getChatLastMessageTime(user.id);
+    const conversationId = getConversationId(currentUser.id, user.id);
+    const lastMsg = lastMessages[conversationId];
+    const lastMessageTime = lastMsg?.timestamp || getChatLastMessageTime(user.id);
+    const messagePreview = lastMsg?.text || (lastMessageTime > 0 ? "Tap to view conversation" : "Start a conversation!");
+
     return {
       id: user.id,
       name: user.name,
-      message: lastMessageTime > 0 ? "Tap to view conversation" : "Start a conversation!",
+      message: messagePreview,
       time: lastMessageTime > 0 ? formatTime(lastMessageTime) : "New",
       lastMessageTime
     };

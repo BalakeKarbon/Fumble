@@ -15,7 +15,7 @@ interface Message {
 interface ChatDetailViewProps {
   chat: { id: number; name: string };
   onBack: () => void;
-  currentUserId: string;
+  currentUserId: number;
   socket: Socket;
 }
 
@@ -32,11 +32,32 @@ export default function ChatDetailView({ chat, onBack, currentUserId, socket }: 
     scrollToBottom();
   }, [messages]);
 
+  // Load message history on mount
   useEffect(() => {
-    const handleReceiveMessage = ({ from, message, timestamp }: { from: string; message: string; timestamp: number }) => {
+    socket.emit("get_messages", { otherUserId: chat.id.toString() });
+
+    const handleMessagesHistory = (history: any[]) => {
+      const formatted = history.map(msg => ({
+        id: msg.id,
+        text: msg.text,
+        isMe: msg.from === currentUserId.toString(),
+        timestamp: msg.timestamp
+      }));
+      setMessages(formatted);
+    };
+
+    socket.on("messages_history", handleMessagesHistory);
+
+    return () => {
+      socket.off("messages_history", handleMessagesHistory);
+    };
+  }, [chat.id, socket, currentUserId]);
+
+  useEffect(() => {
+    const handleReceiveMessage = ({ from, message, timestamp, id }: { from: string; message: string; timestamp: number; id: number }) => {
       console.log("Received message:", { from, message, timestamp });
       setMessages(prev => [...prev, {
-        id: Date.now(),
+        id: id || Date.now(),
         text: message,
         isMe: false,
         timestamp

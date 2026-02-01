@@ -53,7 +53,7 @@ export default function Home() {
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto w-full">
           {activeTab === "swiping" && <SwipingView currentUser={currentUser} />}
-          {activeTab === "chat" && <ChatView onSelectChat={(chat) => setActiveChat(chat)} currentUser={currentUser} />}
+          {activeTab === "chat" && <ChatView onSelectChat={(chat) => setActiveChat(chat)} currentUser={currentUser} socket={socket} />}
           {activeTab === "profile" && <SelfProfileView currentUser={currentUser} />}
         </div>
 
