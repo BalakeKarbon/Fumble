@@ -18,6 +18,7 @@ const handler = app.getRequestHandler();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MESSAGES_FILE = join(__dirname, "app/data/messages.json");
 const USERS_FILE = join(__dirname, "app/data/users.json");
+const SWIPES_FILE = join(__dirname, "app/data/swipes.json");
 
 // Initialize Gemini API (optional - only if API key is provided)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -40,6 +41,20 @@ try {
 // Get user by ID
 function getUserById(userId) {
   return users.find(u => u.id === parseInt(userId));
+}
+
+// Load swipes data
+let swipes = {};
+// RESET ON STARTUP: Write empty object to file
+try {
+  writeFileSync(SWIPES_FILE, JSON.stringify({}, null, 2), "utf-8");
+} catch (error) {
+  console.error("Error clearing swipes data:", error);
+}
+
+// Save swipes to JSON file
+function saveSwipes(swipesData) {
+  writeFileSync(SWIPES_FILE, JSON.stringify(swipesData, null, 2), "utf-8");
 }
 
 // Get conversation ID from two user IDs
@@ -84,6 +99,12 @@ Rewritten message:`;
 
 // Start with empty messages (cleared on each server restart)
 let messages = {};
+// RESET ON STARTUP: Write empty object to file
+try {
+  writeFileSync(MESSAGES_FILE, JSON.stringify({}, null, 2), "utf-8");
+} catch (error) {
+  console.error("Error clearing messages data:", error);
+}
 
 // Helper to get local IP address
 function getLocalIpAddress() {
@@ -113,6 +134,68 @@ app.prepare().then(() => {
       userSockets.set(userId, socket.id);
       socket.userId = userId;
       console.log(`User ${userId} joined with socket ${socket.id}`);
+      socket.userId = userId;
+      console.log(`User ${userId} joined with socket ${socket.id}`);
+    });
+
+    socket.on("swipe", ({ to, direction }) => {
+      const fromId = socket.userId;
+      if (!fromId) return;
+
+      console.log(`User ${fromId} swiped ${direction} on ${to}`);
+
+      // Initialize user's swipes if not exist
+      if (!swipes[fromId]) {
+        swipes[fromId] = {};
+      }
+
+      // Record swipe
+      swipes[fromId][to] = direction;
+      saveSwipes(swipes);
+
+      // Check for match if swiped right
+      if (direction === "right") {
+        const otherUserSwipes = swipes[to];
+        if (otherUserSwipes && otherUserSwipes[fromId] === "right") {
+          console.log(`MATCH! User ${fromId} and User ${to}`);
+
+          // Notify both users of the match
+          socket.emit("new_match", { with: to });
+
+          const otherSocketId = userSockets.get(to);
+          if (otherSocketId) {
+            io.to(otherSocketId).emit("new_match", { with: fromId });
+          }
+        }
+      }
+    });
+
+    socket.on("get_swipes", () => {
+      const userSwipes = swipes[socket.userId] || {};
+      socket.emit("swipes_history", Object.keys(userSwipes));
+    });
+
+    socket.on("get_matches", () => {
+      const userId = socket.userId;
+      if (!userId) return;
+
+      const userSwipes = swipes[userId] || {};
+      const matches = [];
+
+      for (const [targetId, direction] of Object.entries(userSwipes)) {
+        if (direction === "right") {
+          // Check if they also swiped right on us
+          const theirSwipes = swipes[targetId] || {};
+          if (theirSwipes[userId] === "right") {
+            const matchProfile = getUserById(targetId);
+            if (matchProfile) {
+              matches.push(matchProfile);
+            }
+          }
+        }
+      }
+
+      socket.emit("matches_list", matches);
     });
 
     socket.on("send_message", async ({ to, message, tempId }) => {

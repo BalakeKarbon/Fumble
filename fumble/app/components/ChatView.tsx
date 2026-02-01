@@ -16,8 +16,28 @@ interface ChatViewProps {
 export default function ChatView({ onSelectChat, currentUser, socket }: ChatViewProps) {
   const [lastMessages, setLastMessages] = useState<Record<string, { text: string; timestamp: number }>>({});
 
-  // Get all users except the current user for testing
-  const allOtherUsers = getAllUsersExcept(currentUser.id);
+  const [matchedUsers, setMatchedUsers] = useState<UserProfile[]>([]);
+
+  // Get matched users from server
+  useEffect(() => {
+    socket.emit("get_matches");
+
+    const handleMatchesList = (matches: UserProfile[]) => {
+      setMatchedUsers(matches);
+    };
+
+    socket.on("matches_list", handleMatchesList);
+
+    // Also listen for new matches in real-time
+    socket.on("new_match", () => {
+      socket.emit("get_matches");
+    });
+
+    return () => {
+      socket.off("matches_list", handleMatchesList);
+      socket.off("new_match");
+    };
+  }, [socket]);
 
   // Load last messages on mount
   useEffect(() => {
@@ -40,7 +60,7 @@ export default function ChatView({ onSelectChat, currentUser, socket }: ChatView
   }
 
   // Map users to chats with last message time
-  const chatsWithTime = allOtherUsers.map(user => {
+  const chatsWithTime = matchedUsers.map(user => {
     const conversationId = getConversationId(currentUser.id, user.id);
     const lastMsg = lastMessages[conversationId];
     const lastMessageTime = lastMsg?.timestamp || getChatLastMessageTime(user.id);
